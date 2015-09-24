@@ -202,6 +202,16 @@ gulp.task('scripts', ['jshint'], function() {
     .pipe(writeToManifest('scripts'));
 });
 
+// ### Fonts
+// `gulp fonts` - Grabs all the fonts and outputs them in a flattened directory
+// structure. See: https://github.com/armed/gulp-flatten
+gulp.task('fonts', function() {
+  return gulp.src(globs.fonts)
+    .pipe(flatten())
+    .pipe(gulp.dest(path.dist + 'fonts'))
+    .pipe(browserSync.stream());
+});
+
 // ### Images
 // `gulp images` - Run lossless compression on all the images.
 gulp.task('images', function() {
@@ -243,6 +253,7 @@ gulp.task('watch', function() {
   });
   gulp.watch([path.source + 'styles/**/*'], ['styles']);
   gulp.watch([path.source + 'scripts/**/*'], ['jshint', 'scripts']);
+  gulp.watch([path.source + 'fonts/**/*'], ['fonts']);
   gulp.watch([path.source + 'images/**/*'], ['images']);
   gulp.watch(['bower.json', 'assets/manifest.json'], ['build']);
 });
@@ -253,7 +264,7 @@ gulp.task('watch', function() {
 gulp.task('build', function(callback) {
   runSequence('styles',
               'scripts',
-              ['images'],
+              ['fonts', 'images'],
               callback);
 });
 
