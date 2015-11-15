@@ -80,7 +80,6 @@
   };
   
   UTIL.loadEvents= function() {
-    var namespace = UTIL.namespace;
     var body = document.body;
     var args = UTIL.argsParse($(body).data('args'));
     

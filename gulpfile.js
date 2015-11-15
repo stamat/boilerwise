@@ -19,8 +19,10 @@ var runSequence  = require('run-sequence');
 var sass         = require('gulp-sass');
 var sourcemaps   = require('gulp-sourcemaps');
 var uglify       = require('gulp-uglify');
+var gutil        = require('gulp-util');
 
 // See https://github.com/austinpray/asset-builder
+// To write manifest.json see https://github.com/austinpray/asset-builder/blob/master/help/spec.md
 var manifest = require('asset-builder')('./assets/manifest.json');
 
 // `path` - Paths to base asset directories. With trailing slashes.
@@ -30,6 +32,7 @@ var path = manifest.paths;
 
 // `config` - Store arbitrary configuration values here.
 var config = manifest.config || {};
+config.production = gutil.env.type === 'production';
 
 // `globs` - These ultimately end up in their respective `gulp.src`.
 // - `globs.js` - Array of asset-builder JS dependency objects. Example:
@@ -107,7 +110,7 @@ var cssTasks = function(filename) {
         'opera 12'
       ]
     })
-    .pipe(minifyCss, {
+    .pipe(config.production ? minifyCSS : gutil.noop, {
       advanced: false,
       rebase: false
     })
@@ -134,7 +137,7 @@ var jsTasks = function(filename) {
       return gulpif(enabled.maps, sourcemaps.init());
     })
     .pipe(concat, filename)
-    .pipe(uglify, {
+    .pipe(config.production ? uglify : gutil.noop, {
       compress: {
         'drop_debugger': enabled.stripJSDebug
       }
