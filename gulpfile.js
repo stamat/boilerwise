@@ -1,7 +1,6 @@
 // ## Globals
 var argv         = require('minimist')(process.argv.slice(2));
 var autoprefixer = require('gulp-autoprefixer');
-var browserSync  = require('browser-sync').create();
 var changed      = require('gulp-changed');
 var concat       = require('gulp-concat');
 var flatten      = require('gulp-flatten');
@@ -20,6 +19,7 @@ var sass         = require('gulp-sass');
 var sourcemaps   = require('gulp-sourcemaps');
 var uglify       = require('gulp-uglify');
 var gutil        = require('gulp-util');
+var connect      = require('gulp-connect');
 
 // See https://github.com/austinpray/asset-builder
 // To write manifest.json see https://github.com/austinpray/asset-builder/blob/master/help/spec.md
@@ -158,7 +158,6 @@ var jsTasks = function(filename) {
 var writeToManifest = function(directory) {
   return lazypipe()
     .pipe(gulp.dest, path.dist + directory)
-    .pipe(browserSync.stream, {match: '**/*.{js,css}'})
     .pipe(rev.manifest, revManifest, {
       base: path.dist,
       merge: true
@@ -186,7 +185,7 @@ gulp.task('styles', ['wiredep'],function() {
     merged.add(gulp.src(dep.globs, {base: 'styles'})
       .pipe(cssTasksInstance));
   });
-  return merged
+  merged
     .pipe(writeToManifest('styles'));
 });
 
@@ -201,7 +200,7 @@ gulp.task('scripts', ['jshint'], function() {
         .pipe(jsTasks(dep.name))
     );
   });
-  return merged
+  merged
     .pipe(writeToManifest('scripts'));
 });
 
@@ -209,29 +208,27 @@ gulp.task('scripts', ['jshint'], function() {
 // `gulp fonts` - Grabs all the fonts and outputs them in a flattened directory
 // structure. See: https://github.com/armed/gulp-flatten
 gulp.task('fonts', function() {
-  return gulp.src(globs.fonts)
+  gulp.src(globs.fonts)
     .pipe(flatten())
-    .pipe(gulp.dest(path.dist + 'fonts'))
-    .pipe(browserSync.stream());
+    .pipe(gulp.dest(path.dist + 'fonts')).pipe(connect.reload());
 });
 
 // ### Images
 // `gulp images` - Run lossless compression on all the images.
 gulp.task('images', function() {
-  return gulp.src(globs.images)
+  gulp.src(globs.images)
     .pipe(imagemin({
       progressive: true,
       interlaced: true,
       svgoPlugins: [{removeUnknownsAndDefaults: false}, {cleanupIDs: false}]
     }))
-    .pipe(gulp.dest(path.dist + 'images'))
-    .pipe(browserSync.stream());
+    .pipe(gulp.dest(path.dist + 'images')).pipe(connect.reload());
 });
 
 // ### JSHint
 // `gulp jshint` - Lints configuration JSON and project JS.
 gulp.task('jshint', function() {
-  return gulp.src([
+  gulp.src([
     'bower.json', 'gulpfile.js'
   ].concat(project.js))
     .pipe(jshint())
@@ -239,9 +236,19 @@ gulp.task('jshint', function() {
     .pipe(gulpif(enabled.failJSHint, jshint.reporter('fail')));
 });
 
+gulp.task('reload', function() {
+    gulp.src(['*.html', '*.htm', '*.php']).pipe(connect.reload());
+});
+
 // ### Clean
 // `gulp clean` - Deletes the build folder entirely.
 gulp.task('clean', require('del').bind(null, [path.dist]));
+
+gulp.task('serve', function() {
+  connect.server({
+    livereload: true
+  });
+});
 
 // ### Watch
 // `gulp watch` - Use BrowserSync to proxy your dev server and synchronize code
@@ -249,16 +256,13 @@ gulp.task('clean', require('del').bind(null, [path.dist]));
 // `manifest.config.devUrl`. When a modification is made to an asset, run the
 // build step for that asset and inject the changes into the page.
 // See: http://www.browsersync.io
-gulp.task('watch', function() {
-  browserSync.init({
-    files: ['{templates}/**/*.php', '*.php', '*.html', '*.htm'],
-    proxy: config.devUrl
-  });
-  gulp.watch([path.source + 'styles/**/*'], ['styles']);
-  gulp.watch([path.source + 'scripts/**/*'], ['jshint', 'scripts']);
-  gulp.watch([path.source + 'fonts/**/*'], ['fonts']);
-  gulp.watch([path.source + 'images/**/*'], ['images']);
-  gulp.watch(['bower.json', 'assets/manifest.json'], ['build']);
+gulp.task('watch', ['serve'], function() {
+  gulp.watch([path.source + 'styles/**/*'], ['styles', 'reload']);
+  gulp.watch([path.source + 'scripts/**/*'], ['jshint', 'scripts', 'reload']);
+  gulp.watch([path.source + 'fonts/**/*'], ['fonts', 'reload']);
+  gulp.watch([path.source + 'images/**/*'], ['images', 'reload']);
+  gulp.watch(['*.html', '*.htm', '*.php'], ['reload']);
+  gulp.watch(['bower.json', 'assets/manifest.json'], ['build', 'reload']);
 });
 
 // ### Build
