@@ -259,8 +259,8 @@ gulp.task('serve', function() {
 gulp.task('watch', ['serve'], function() {
   gulp.watch([path.source + 'styles/**/*'], ['styles', 'reload']);
   gulp.watch([path.source + 'scripts/**/*'], ['jshint', 'scripts', 'reload']);
-  gulp.watch([path.source + 'fonts/**/*'], ['fonts', 'reload']);
-  gulp.watch([path.source + 'images/**/*'], ['images', 'reload']);
+  gulp.watch([path.source + 'fonts/**/*'], ['fonts']);
+  gulp.watch([path.source + 'images/**/*'], ['images']);
   gulp.watch(['*.html', '*.htm', '*.php'], ['reload']);
   gulp.watch(['bower.json', 'assets/manifest.json'], ['build', 'reload']);
 });
