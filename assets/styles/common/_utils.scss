@@ -27,3 +27,30 @@
         background-image: url("../images/#{$filename}@2x.#{$ext}");
     }
 }
+
+@mixin clearfix {
+  &::after {
+    clear: both;
+    content: "";
+    display: table;
+  }
+}
+
+@mixin media($query) {
+    @media screen and ($query) {
+      @content;
+    }
+}
+
+@function new-breakpoint($query: $feature $value) {
+  @if length($query) == 1 {
+    $v: nth($query, 1);
+    $query: "min-width: #{$v}";
+  } @else {
+    $f: nth($query, 1);
+    $v: nth($query, 2);
+    $query: "#{$f}: #{$v}";
+  }
+
+  @return $query;
+}
